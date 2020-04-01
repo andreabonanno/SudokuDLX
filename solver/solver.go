@@ -1,21 +1,41 @@
 package main
 
 import (
-	"SudokuDLX/dlx"
+	"../backtrack"
+	"../dlx"
 	"fmt"
 	"time"
 )
 
 func main() {
 
-	sudoku := "___26_7_168__7__9_19___45__82_1___4___46_29___5___3_28__93___74_4__5__367_3_18___"
+	sudoku := [9][9]int{
+		{0, 6, 1, 0, 0, 7, 0, 0, 3},
+		{0, 9, 2, 0, 0, 3, 0, 0, 0},
+		{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		{0, 0, 8, 5, 3, 0, 0, 0, 0},
+		{0, 0, 0, 0, 0, 0, 5, 0, 4},
+		{5, 0, 0, 0, 0, 8, 0, 0, 0},
+		{0, 4, 0, 0, 0, 0, 0, 0, 1},
+		{0, 0, 0, 1, 6, 0, 8, 0, 0},
+		{6, 0, 0, 0, 0, 0, 0, 0, 0},
+	}
+
 	start := time.Now()
 	m := encodeConstraints(sudoku)
 	m.Solve(0)
 	res := decodeExactCoverSolution(m.GetExactCover())
 	elapsed := time.Since(start)
-	fmt.Printf("Tempo esecuzione DLX: %s\n", elapsed)
 	printSudoku(res)
+	fmt.Printf("Tempo esecuzione DLX: %s\n", elapsed)
+	print("\n")
+
+	start = time.Now()
+	board := backtrack.Board{Cells: sudoku}
+	board.Backtrack()
+	elapsed = time.Since(start)
+	print(board.String())
+	fmt.Printf("Tempo esecuzione Backtrack: %s\n", elapsed)
 }
 
 func printSudoku(s string) {
@@ -30,14 +50,14 @@ func printSudoku(s string) {
 
 // Inizializza il problema di copertura
 // Prende come argomento un problema sudoku in formato stringa di 81 caratteri
-func encodeConstraints(s string) dlx.Matrix {
+func encodeConstraints(s [9][9]int) dlx.Matrix {
 	m := dlx.NewMatrix(324)
 
 	for row, position := 0, 0; row < 9; row++ {
 		for column := 0; column < 9; column, position = column+1, position+1 {
 			region := row/3*3 + column/3
-			digit := int(s[position] - '1') // zero based digit
-			if digit >= 0 && digit < 9 {
+			digit := s[row][column] - 1
+			if digit > 0 && digit < 9 {
 				m.AddRow(position, 81+row*9+digit, 162+column*9+digit, 243+region*9+digit)
 			} else {
 				for digit = 0; digit < 9; digit++ {
